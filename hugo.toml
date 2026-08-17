@@ -1,0 +1,28 @@
+baseURL = "https://go-macos.github.io/"
+title = "go-macos"
+disableKinds = ["taxonomy", "term", "RSS", "sitemap", "404"]
+
+[markup.goldmark.renderer]
+  unsafe = true
+
+# One card per repository. "reach" is the mechanism it actually uses to talk to
+# the OS, and "used_by" is a measured count of repositories in the fleet whose
+# go.mod requires it -- not an aspiration.
+[[params.repos]]
+  name = "objc"
+  reach = "dlopen + objc_msgSend, via ebitengine/purego"
+  role = "foundation"
+  used_by = "12 repositories depend on it"
+  result = "The shared home for the Objective-C plumbing the fleet's CGO=0 macOS code kept re-implementing: cached selector/class lookup, NSString↔Go bridging, framework dlopen (Foundation, AppKit, WebKit, CoreFoundation, Security, libSystem), autorelease pools, run loops, runtime class registration, and a main-thread hop through libdispatch."
+[[params.repos]]
+  name = "keychain"
+  reach = "dlsym'd CoreFoundation + Security, via ebitengine/purego"
+  role = "secret store"
+  used_by = "7 repositories depend on it"
+  result = "Generic-password items over a (service, account) pair — Set, Get, Delete — with typed errors comparable through errors.Is / errors.As. It never shells out to /usr/bin/security, so the secret never appears in any process's argv."
+[[params.repos]]
+  name = "notify"
+  reach = "Darwin notify(3), NSDistributedNotificationCenter, NSUserNotificationCenter"
+  role = "notifications"
+  used_by = "the macOS counterpart to go-freedesktop/notifications"
+  result = "Three mechanisms behind one package: named cross-process signals with no payload, distributed notifications carrying a map[string]string userInfo, and user-visible notifications. Each row of its table states plainly whether it is cross-process and whether it needs a run loop."

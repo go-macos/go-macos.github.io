@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ .Site.Title }} — pure-Go macOS system APIs, no cgo</title>
+<meta name="description" content="Pure-Go (CGO_ENABLED=0) access to macOS system APIs through ebitengine/purego: the Objective-C runtime bridge (objc), the Keychain generic-password store (keychain) and the notification mechanisms (notify). dlopen + objc_msgSend, no cgo, and never shelling out to osascript or /usr/bin/security.">
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1b1f24; --muted: #57606a; --card: #f6f8fa;
+    --border: #d0d7de; --accent: #0969da; --accent-fg: #ffffff;
+    --foundation: #1a7f37; --leaf: #9a6700;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) {
+      --bg: #0d1117; --fg: #e6edf3; --muted: #9198a1; --card: #161b22;
+      --border: #30363d; --accent: #4493f8; --accent-fg: #0d1117;
+      --foundation: #3fb950; --leaf: #d29922;
+    }
+  }
+  /* Forced dark (manual toggle wins over the OS preference). */
+  :root[data-theme="dark"] {
+  --bg: #0d1117; --fg: #e6edf3; --muted: #9198a1; --card: #161b22;
+  --border: #30363d; --accent: #4493f8; --accent-fg: #0d1117;
+  --foundation: #3fb950; --leaf: #d29922;
+  }
+  /* Forced light (manual toggle wins over the OS preference). */
+  :root[data-theme="light"] {
+  --bg: #ffffff; --fg: #1b1f24; --muted: #57606a; --card: #f6f8fa;
+  --border: #d0d7de; --accent: #0969da; --accent-fg: #ffffff;
+  --foundation: #1a7f37; --leaf: #9a6700;
+  }
+  .theme-toggle {
+    position: fixed; top: 14px; right: 14px; z-index: 10;
+    font: inherit; font-size: .8rem; cursor: pointer; padding: 6px 12px;
+    color: var(--fg); background: var(--card); border: 1px solid var(--border); border-radius: 999px;
+  }
+  .theme-toggle:hover { border-color: var(--accent); }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 20px; }
+  header { padding: 72px 0 32px; text-align: center; }
+  h1 { font-size: 2.6rem; margin: 0 0 .3em; letter-spacing: -.02em; }
+  .logo { width: 88px; height: 88px; margin: 0 auto 18px; display: block; }
+  .tagline { font-size: 1.2rem; color: var(--muted); margin: 0 auto; max-width: 680px; }
+  .pills { margin: 22px 0 0; }
+  .pill {
+    display: inline-block; margin: 4px; padding: 3px 10px; font-size: .82rem;
+    color: var(--muted); background: var(--card); border: 1px solid var(--border); border-radius: 999px;
+  }
+  .cta { margin: 30px 0 0; }
+  .btn {
+    display: inline-block; padding: 10px 18px; margin: 4px; border-radius: 8px; text-decoration: none;
+    font-weight: 600; border: 1px solid var(--border);
+  }
+  .btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+  .btn.ghost { color: var(--fg); background: transparent; }
+  .lead { color: var(--fg); max-width: 800px; margin: 8px auto 0; text-align: center; }
+  .lead code { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 1px 6px; }
+  h2.section { text-align: center; margin: 40px 0 4px; font-size: 1.4rem; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; padding: 16px 0 8px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; }
+  .card h3 { margin: 0 0 .35em; font-size: 1.2rem; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .card h3 a { text-decoration: none; }
+  .card .reach { color: var(--muted); font-size: .85rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; margin: 0 0 .6em; }
+  .card p { margin: 0 0 .8em; color: var(--fg); font-size: .95rem; }
+  .card .used { color: var(--muted); font-size: .85rem; margin: 0 0 .8em; }
+  .card .badges { margin-top: auto; }
+  .card .badges img { height: 20px; vertical-align: middle; }
+  .role { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); white-space: nowrap; }
+  .role.foundation { color: var(--foundation); }
+  .role.leaf { color: var(--leaf); }
+  .principles { color: var(--muted); text-align: center; padding: 10px 0 0; max-width: 820px; margin: 0 auto; }
+  footer { color: var(--muted); text-align: center; padding: 40px 0 56px; font-size: .9rem; }
+  a { color: var(--accent); }
+</style>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<script>
+  // Apply the saved theme before first paint to avoid a flash; "system" leaves no attribute.
+  (function(){var m=localStorage.getItem('theme');if(m&&m!=='system')document.documentElement.setAttribute('data-theme',m);})();
+</script>
+</head>
+<body>
+  <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle light, dark or system theme"><span id="theme-label">🖥️ System</span></button>
+  <header class="wrap">
+    <img class="logo" src="/img/logo.svg" alt="go-macos logo" width="88" height="88">
+    <h1>go-macos</h1>
+    <p class="tagline">macOS system APIs from <strong>pure Go</strong> —
+      the Objective-C runtime, the Keychain and the notification bus, reached with
+      <strong><code>CGO_ENABLED=0</code></strong> and no subprocesses.</p>
+    <div class="pills">
+      <span class="pill">CGO_ENABLED=0</span>
+      <span class="pill">ebitengine/purego</span>
+      <span class="pill">no osascript</span>
+      <span class="pill">no /usr/bin/security</span>
+      <span class="pill">BSD-3-Clause</span>
+    </div>
+    <div class="cta">
+      <a class="btn primary" href="https://github.com/go-macos">GitHub</a>
+      <a class="btn ghost" href="https://pkg.go.dev/github.com/go-macos/objc">Go reference</a>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <p class="lead">Everything here reaches the operating system the same way:
+      <a href="https://github.com/ebitengine/purego">ebitengine/purego</a> — <code>dlopen</code>,
+      <code>dlsym</code> and <code>objc_msgSend</code> — so the packages link with
+      <strong>no cgo</strong> and cross-compile like any other Go code. Nothing shells out:
+      not to <code>osascript</code>, not to <code>/usr/bin/security</code>. That last one is a
+      security property rather than a preference — a secret passed to a subprocess is visible in
+      that process's <code>argv</code>.</p>
+
+    <p class="lead"><strong>One shared home, not three copies.</strong> <code>objc</code> exists
+      because the fleet's CGO-free macOS code kept re-implementing the same selector caching,
+      <code>NSString</code> bridging and autorelease-pool handling. <code>keychain</code> and
+      <code>notify</code> build on it rather than repeating it, and the counts below are measured
+      from the <code>go.mod</code> files that require each package.</p>
+
+    <h2 class="section">Repositories</h2>
+    <section class="grid">
+      {{ range .Site.Params.repos }}
+      <article class="card">
+        <h3>
+          <a href="https://github.com/go-macos/{{ .name }}"><code>{{ .name }}</code></a>
+          <span class="role {{ if eq .role "foundation" }}foundation{{ else }}leaf{{ end }}">{{ .role }}</span>
+        </h3>
+        <p class="reach">{{ .reach }}</p>
+        <p>{{ .result }}</p>
+        <p class="used">{{ .used_by }}</p>
+        <div class="badges">
+          <a href="https://github.com/go-macos/{{ .name }}/actions/workflows/ci.yml"><img src="https://github.com/go-macos/{{ .name }}/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+          <a href="https://pkg.go.dev/github.com/go-macos/{{ .name }}"><img src="https://pkg.go.dev/badge/github.com/go-macos/{{ .name }}.svg" alt="Go reference"></a>
+          <img src="https://img.shields.io/badge/license-BSD--3--Clause-blue.svg" alt="BSD-3-Clause">
+        </div>
+      </article>
+      {{ end }}
+    </section>
+    <p class="principles">These are macOS-side packages, so they build and test on darwin; on every
+      other platform the exported calls return a typed <code>ErrUnsupported</code> rather than
+      failing to compile. <code>go-macos/objc</code> has a deliberate peer on the other side of the
+      fence — <a href="https://github.com/go-mswin/win32">go-mswin/win32</a> — so a program that
+      needs both talks to two libraries built the same way, instead of one library and a pile of
+      hand-rolled syscalls.</p>
+  </main>
+
+  <footer class="wrap">
+    BSD-3-Clause · <a href="https://github.com/go-macos">github.com/go-macos</a> ·
+    built on <a href="https://github.com/ebitengine/purego">ebitengine/purego</a>
+  </footer>
+  <script>
+  (function(){
+    var order=['system','light','dark'], root=document.documentElement;
+    var labels={system:'🖥️ System',light:'☀️ Light',dark:'🌙 Dark'};
+    function apply(m){ if(m==='system'){root.removeAttribute('data-theme');}else{root.setAttribute('data-theme',m);} localStorage.setItem('theme',m); var el=document.getElementById('theme-label'); if(el)el.textContent=labels[m]; }
+    var mode=localStorage.getItem('theme')||'system'; apply(mode);
+    var btn=document.getElementById('theme-toggle');
+    if(btn) btn.addEventListener('click',function(){ mode=order[(order.indexOf(mode)+1)%order.length]; apply(mode); });
+  })();
+  </script>
+</body>
+</html>
