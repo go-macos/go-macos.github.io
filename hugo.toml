@@ -5,20 +5,27 @@ disableKinds = ["taxonomy", "term", "RSS", "sitemap", "404"]
 [markup.goldmark.renderer]
   unsafe = true
 
-# One card per repository. "reach" is the mechanism it actually uses to talk to
-# the OS, and "used_by" is a measured count of repositories in the fleet whose
-# go.mod requires it -- not an aspiration.
+# One card per repository, and EVERY repository in the org has one. "reach" is
+# the mechanism it actually uses to talk to the OS.
+#
+# "used_by" is measured, never guessed. It said "12 repositories depend on it"
+# for objc when the answer was 21, which is what a hand-typed count does. Prefer
+# naming the consumer over counting; when a number is worth having, re-measure it
+# across the fleet first:
+#
+#	cd ~/Documents/VCS/GIT/github.com \\
+#	  && grep -lE "github.com/go-macos/<pkg>( |$)" */*/go.mod | grep -v "^go-macos/<pkg>/"
 [[params.repos]]
   name = "objc"
   reach = "dlopen + objc_msgSend, via ebitengine/purego"
   role = "foundation"
-  used_by = "12 repositories depend on it"
+  used_by = "every other macOS package here rests on it"
   result = "The shared home for the Objective-C plumbing the fleet's CGO=0 macOS code kept re-implementing: cached selector/class lookup, NSString↔Go bridging, framework dlopen (Foundation, AppKit, WebKit, CoreFoundation, Security, libSystem), autorelease pools, run loops, runtime class registration, and a main-thread hop through libdispatch."
 [[params.repos]]
   name = "keychain"
   reach = "dlsym'd CoreFoundation + Security, via ebitengine/purego"
   role = "secret store"
-  used_by = "7 repositories depend on it"
+  used_by = "6 repositories in the fleet require it"
   result = "Generic-password items over a (service, account) pair — Set, Get, Delete — with typed errors comparable through errors.Is / errors.As. It never shells out to /usr/bin/security, so the secret never appears in any process's argv."
 [[params.repos]]
   name = "notify"
@@ -62,3 +69,33 @@ disableKinds = ["taxonomy", "term", "RSS", "sitemap", "404"]
   role = "audio"
   used_by = "go-xrkit/player plays sound through it"
   result = "Decode compressed audio and play PCM, CGO_ENABLED=0 throughout."
+[[params.repos]]
+  name = "accessibility"
+  reach = "Accessibility (AX) API, via ebitengine/purego"
+  role = "windows"
+  used_by = "go-xrkit/desk puts applications on the ribbon's screens with it"
+  result = "Move another application's window to a chosen display. It needs the Accessibility grant and says so plainly rather than failing silently, and it never trusts a write: every move is read back, and a window that did not go where it was told is a refusal with both frames in the message. Two rules in it came from measurement, not documentation — a window is SHRUNK BEFORE being moved, because the window server clamps a move by the size the window has at the moment of the write, and a window too big for its destination is walked one display closer per write rather than refused, so it keeps writing while each write brings the window nearer."
+[[params.repos]]
+  name = "hotkey"
+  reach = "Carbon RegisterEventHotKey, via ebitengine/purego"
+  role = "shortcuts"
+  used_by = "go-xrkit/desk claims fourteen of them"
+  result = "System-wide keyboard shortcuts with NO permission dialog at all — Carbon's hot-key API is the one path on macOS that needs neither Accessibility nor Input Monitoring. When the combination you asked for is already taken it falls back to a neighbour and tells you, in glyphs, which one it got, so a program can print what a person should actually press."
+[[params.repos]]
+  name = "statusitem"
+  reach = "NSStatusBar, NSStatusItem and NSMenu, via ebitengine/purego"
+  role = "menu bar"
+  used_by = "go-xrkit/desk hangs its 👓 menu there"
+  result = "An item in the menu bar — what everyone calls a tray icon — from pure Go. A row carries a title, an optional key equivalent and a Go func; an empty row is a separator. It matters most for a program with no window of its own, or one whose window is not there yet: the menu is where a person clicks when there is nothing else to click."
+[[params.repos]]
+  name = "pointer"
+  reach = "CGWarpMouseCursorPosition and CGEventGetLocation, via ebitengine/purego"
+  role = "pointer"
+  used_by = "go-xrkit/desk brings the pointer to the screen you are looking at"
+  result = "Says where the pointer is and puts it somewhere else, with no permission of any kind. It exists because of a measured failure: an application that shows one display inside another gives a person a picture of somewhere the pointer can go and no way to get it there, and dragging the mouse across a captured screen is dragging it blind. It moves the pointer and does not click — nothing here synthesises a button event."
+[[params.repos]]
+  name = "fileprogress"
+  reach = "NSProgress published to the system, via ebitengine/purego"
+  role = "progress"
+  used_by = "nothing in the fleet yet"
+  result = "Tells macOS a file is being downloaded, so the Finder draws the pie it draws for a browser's downloads. The pie is not something the system works out by watching a file grow: it has to be PUBLISHED, and there is exactly one way of being heard. An extended attribute on the file looks like it ought to work, is documented in various corners of the internet, and does nothing — measured against a real Finder before this package was written."
