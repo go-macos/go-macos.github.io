@@ -99,3 +99,9 @@ disableKinds = ["taxonomy", "term", "RSS", "sitemap", "404"]
   role = "progress"
   used_by = "nothing in the fleet yet"
   result = "Tells macOS a file is being downloaded, so the Finder draws the pie it draws for a browser's downloads. The pie is not something the system works out by watching a file grow: it has to be PUBLISHED, and there is exactly one way of being heard. An extended attribute on the file looks like it ought to work, is documented in various corners of the internet, and does nothing — measured against a real Finder before this package was written."
+[[params.repos]]
+  name = "appicon"
+  reach = "NSRunningApplication and NSBitmapImageRep, via ebitengine/purego"
+  role = "icons"
+  used_by = "go-xrkit/desk shows what is running, with the icons"
+  result = "A running application's own icon, as straight RGBA, at the size you ask for — and no permission of any kind, because an icon is public information about a process where its windows are not. A size is asked for rather than inferred: an icon is a FAMILY of representations, 32 of them for Firefox, so asking for 64 gets the 64 the designer drew where scaling \"the\" icon gets a blurred 512. Three measured traps are documented beside the lines they explain — NSRunningApplication answers from a cache that needs the run loop pumped, a class that was never loaded answers zero rather than erroring, and a bitmap context cannot draw non-premultiplied, which makes graphicsContextWithBitmapImageRep: return nil."
