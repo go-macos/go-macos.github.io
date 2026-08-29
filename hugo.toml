@@ -105,3 +105,15 @@ disableKinds = ["taxonomy", "term", "RSS", "sitemap", "404"]
   role = "icons"
   used_by = "go-xrkit/desk shows what is running, with the icons"
   result = "A running application's own icon, as straight RGBA, at the size you ask for — and no permission of any kind, because an icon is public information about a process where its windows are not. A size is asked for rather than inferred: an icon is a FAMILY of representations, 32 of them for Firefox, so asking for 64 gets the 64 the designer drew where scaling \"the\" icon gets a blurred 512. Three measured traps are documented beside the lines they explain — NSRunningApplication answers from a cache that needs the run loop pumped, a class that was never loaded answers zero rather than erroring, and a bitmap context cannot draw non-premultiplied, which makes graphicsContextWithBitmapImageRep: return nil."
+[[params.repos]]
+  name = "appbundle"
+  reach = "the .app directory itself — path and plist work, no AppKit"
+  role = "bundles"
+  used_by = "go-downloader/godl ships as an .app built by it"
+  result = "Says whether the running process is inside an .app, and assembles one around an executable. It touches no framework at all, which is the point: a bundle assembler is needed in a BUILD, on whatever machine the build runs on, so this one compiles and is tested on linux and windows too. What it encodes is that a bare executable is not an application on this system — asked for from outside a bundle, a status item is asked for by nobody, appears nowhere, and the process ends without complaining."
+[[params.repos]]
+  name = "brightness"
+  reach = "DisplayServicesGet/SetBrightness — a PRIVATE framework, looked up at run time"
+  role = "backlight"
+  used_by = "go-xrkit/desk darkens the Mac's panel while the glasses show it"
+  result = "Reads and sets a display's backlight, and hands back the way home. It exists for the screen that is being shown SOMEWHERE ELSE: mirrored into a pair of display glasses, the physical panel is a copy of private work at reading distance, facing whoever walks past, lit at full power for nobody. Turning the backlight off beats covering the screen with a black window — the framebuffer is untouched, so a capture of that display is unchanged, and there is no window for something else to raise itself above. Two things are documented because they were measured: the documented IODisplay route does not drive an Apple Silicon built-in panel at all, and DisplayServicesSetBrightness answers success for a display id no machine has, which is why Dim READS before it changes anything."
