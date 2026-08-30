@@ -117,3 +117,15 @@ disableKinds = ["taxonomy", "term", "RSS", "sitemap", "404"]
   role = "backlight"
   used_by = "go-xrkit/desk darkens the Mac's panel while the glasses show it"
   result = "Reads and sets a display's backlight, and hands back the way home. It exists for the screen that is being shown SOMEWHERE ELSE: mirrored into a pair of display glasses, the physical panel is a copy of private work at reading distance, facing whoever walks past, lit at full power for nobody. Turning the backlight off beats covering the screen with a black window — the framebuffer is untouched, so a capture of that display is unchanged, and there is no window for something else to raise itself above. Two things are documented because they were measured: the documented IODisplay route does not drive an Apple Silicon built-in panel at all, and DisplayServicesSetBrightness answers success for a display id no machine has, which is why Dim READS before it changes anything."
+[[params.repos]]
+  name = "launchagent"
+  reach = "a plist in ~/Library/LaunchAgents, or SMAppService through go-macos/servicemanagement"
+  role = "start at login"
+  used_by = "go-downloader/godl, behind `godl config startup on`"
+  result = "Keeps a program running across logouts and restarts, by whichever of the two mechanisms this process can actually use — SMAppService inside an application bundle, the legacy plist everywhere else, and it says which one it used. A refusal falls back AND reports itself, because failing outright would stop a working program working the day it gained a bundle, and falling back silently would hide a real packaging defect for as long as anybody cared to look. Disable takes away BOTH: a program that shipped a plist and then gained a bundle has two registrations, macOS acts on the newer one, and removing only that is the bug a person describes as \"I turned it off and it came back\"."
+[[params.repos]]
+  name = "servicemanagement"
+  reach = "SMAppService, via ebitengine/purego"
+  role = "login items"
+  used_by = "go-macos/launchagent prefers it over the plist whenever the caller is bundled"
+  result = "The supported way to start an application, agent or daemon at login since macOS 13. Two things it is shaped around, both measured rather than read: requiresApproval is a NORMAL outcome — register succeeds, the service is held, and it will not run until a person allows it in System Settings — so the status is a value carrying the sentence to show them, not an error and not a silence. And SMAppService needs a BUNDLE, which macOS hides: outside one the class is there, the factories hand back objects, and status answers notFound exactly as a genuinely missing service does; only register fails, blaming code signing (\"Codesigning failure loading plist … code: -67028\"). So every call asks NSBundle for an identifier first and reports ErrNotBundled, which is answerable."
