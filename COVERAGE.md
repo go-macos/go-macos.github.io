@@ -47,7 +47,7 @@ ranked by **a named consumer that exists today**, not by breadth.
 | **LocalAuthentication** | go-pdfkit reader (Touch ID unlock) | Biometry cannot be reimplemented; it is an attestation by the Secure Enclave. |
 | **Virtualization**, **vmnet** | weft (microVM cloud), the Tart VM lab | VZ boot is already proven for weft; `vmnet` is precisely the socket networking the lab depends on. Today that goes through `tart`, an external binary. |
 | **Network**, **NetworkExtension** | claimward (WireGuard VPN) | A macOS VPN must be a `NEPacketTunnelProvider`; there is no user-space substitute. |
-| **DiskArbitration** | go-diskimages (attaching a DMG), weft, the Tart lab | Enumerating block devices and mounting or unmounting them is an OS service. It has nothing to do with decoding a filesystem format, and the binding belongs HERE, exactly as the Linux ioctl surface lives in its own org (`go-fsctl`) rather than inside `go-filesystems`. |
+| ~~**DiskArbitration**~~ **DONE v0.1.0** | go-diskimages (attaching a DMG), weft, the Tart lab | Enumerating block devices and mounting or unmounting them is an OS service. It has nothing to do with decoding a filesystem format, and the binding belongs HERE, exactly as the Linux ioctl surface lives in its own org (`go-fsctl`) rather than inside `go-filesystems`. |
 
 **FSKit is deliberately NOT listed above.** Publishing a user-space filesystem
 would let the 18 pure-Go drivers in `go-filesystems` actually be mounted, which
@@ -69,6 +69,26 @@ the way in. Nothing of the sort exists in the fleet today.
 | **UserNotifications** | replaces the archived `tannevaled/notify` | `notify` drives `NSUserNotification`, deprecated. `UNUserNotificationCenter` is the live API. |
 | **UniformTypeIdentifiers** | go-freedesktop (icontheme, thumbnail) | The macOS half of file-type resolution; today only the freedesktop half exists. |
 | **IOSurface** | screencapture, xrkit | Zero-copy frame handoff. `screencapture` already pays 18 ms per 4K frame. |
+
+### Landed since this census
+
+`go-macos/servicemanagement` v0.1.0, `go-macos/usernotifications`,
+`go-macos/localauthentication`, `go-macos/diskarbitration` v0.1.0.
+
+`diskarbitration` is worth reading before writing another CoreFoundation
+binding: it reaches 100% coverage of the BINDINGS by making the bound C entry
+points themselves the seams, so `DASessionCreate` can be made to answer NULL
+without a broken machine. Four defects it found by measuring rather than by
+reading the headers:
+
+- `CFNumberGetValue` returns **false** for a lossy conversion, so trusting the
+  boolean silently discards a double-typed number.
+- A refusal does not carry a `kDAReturn` constant: a busy unmount answers
+  `0x0000C010`, which is `unix_err(EBUSY)`.
+- An attached disk image is marked `DADeviceModel = "Disk Image"` on macOS 26,
+  not by the historical `DADeviceProtocol` spelling most code checks.
+- `CFStringGetLength` on a non-CFString **segfaults**. Type-check dictionary
+  keys before reading them.
 
 ## Tier B — foreign judges, per the fleet's own doctrine
 
