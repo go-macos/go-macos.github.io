@@ -47,7 +47,25 @@ ranked by **a named consumer that exists today**, not by breadth.
 | **LocalAuthentication** | go-pdfkit reader (Touch ID unlock) | Biometry cannot be reimplemented; it is an attestation by the Secure Enclave. |
 | **Virtualization**, **vmnet** | weft (microVM cloud), the Tart VM lab | VZ boot is already proven for weft; `vmnet` is precisely the socket networking the lab depends on. Today that goes through `tart`, an external binary. |
 | **Network**, **NetworkExtension** | claimward (WireGuard VPN) | A macOS VPN must be a `NEPacketTunnelProvider`; there is no user-space substitute. |
-| **DiskArbitration**, **FSKit** | go-filesystems, go-volumes, go-diskimages | FSKit lands a user-space filesystem without a kext — the macOS counterpart to the Linux ioctl surface `go-fsctl` already covers. |
+| **DiskArbitration** | go-diskimages (attaching a DMG), weft, the Tart lab | Enumerating block devices and mounting or unmounting them is an OS service. It has nothing to do with decoding a filesystem format, and the binding belongs HERE, exactly as the Linux ioctl surface lives in its own org (`go-fsctl`) rather than inside `go-filesystems`. |
+
+**FSKit is deliberately NOT listed above.** Publishing a user-space filesystem
+would let the 18 pure-Go drivers in `go-filesystems` actually be mounted, which
+is the prize — but two things gate it before any Objective-C is written:
+
+1. An FSKit module is a signed app extension carrying
+   `com.apple.developer.fskit.fsmodule`, and that entitlement needs a
+   provisioning profile from Apple. That is a distribution wall, not a coding
+   problem, and no amount of purego moves it.
+2. `go-filesystems/interface`.`Filesystem` is **path-based**: `ReadFile` returns
+   a whole file. A mount needs handle-based reads at an offset, or a 4 KB read
+   of a 4 GB file reads 4 GB. That gap is real on every operating system, and
+   closing it is work in the OS-INDEPENDENT org, not here.
+
+A pure-Go NFS or WebDAV server in front of `Filesystem` would mount on macOS
+*and* Linux *and* Windows with no OS-specific code at all, needs no entitlement,
+and would prove the whole idea first. FSKit is then a native-polish option, not
+the way in. Nothing of the sort exists in the fleet today.
 | **UserNotifications** | replaces the archived `tannevaled/notify` | `notify` drives `NSUserNotification`, deprecated. `UNUserNotificationCenter` is the live API. |
 | **UniformTypeIdentifiers** | go-freedesktop (icontheme, thumbnail) | The macOS half of file-type resolution; today only the freedesktop half exists. |
 | **IOSurface** | screencapture, xrkit | Zero-copy frame handoff. `screencapture` already pays 18 ms per 4K frame. |
