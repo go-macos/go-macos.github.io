@@ -47,7 +47,22 @@ ranked by **a named consumer that exists today**, not by breadth.
 | **LocalAuthentication** | go-pdfkit reader (Touch ID unlock) | Biometry cannot be reimplemented; it is an attestation by the Secure Enclave. |
 | **Virtualization**, **vmnet** | weft (microVM cloud), the Tart VM lab | VZ boot is already proven for weft; `vmnet` is precisely the socket networking the lab depends on. Today that goes through `tart`, an external binary. |
 | **Network**, **NetworkExtension** | claimward (WireGuard VPN) | A macOS VPN must be a `NEPacketTunnelProvider`; there is no user-space substitute. |
-| ~~**DiskArbitration**~~ **DONE v0.1.0** | go-diskimages (attaching a DMG), weft, the Tart lab | Enumerating block devices and mounting or unmounting them is an OS service. It has nothing to do with decoding a filesystem format, and the binding belongs HERE, exactly as the Linux ioctl surface lives in its own org (`go-fsctl`) rather than inside `go-filesystems`. |
+| ~~**DiskArbitration**~~ **DONE v0.1.0** | ⚠ **no consumer wired yet** — see below | Enumerating block devices and mounting or unmounting them is an OS service. It has nothing to do with decoding a filesystem format, and the binding belongs HERE, exactly as the Linux ioctl surface lives in its own org (`go-fsctl`) rather than inside `go-filesystems`. |
+
+**Correction, 2026-08-31.** This row first named `go-diskimages` as the consumer,
+"which goes through `hdiutil`/`diskutil` today". That was wrong, and it was
+asserted from a `grep` rather than read: **`go-diskimages` shells out to
+nothing.** Every `hdiutil` mention in it is a *comment* explaining what Apple's
+tool produces so the pure-Go writer reproduces its bytes, and the library's only
+`exec.Command` is a cobra subcommand that happens to be named `exec`.
+
+A sweep of the whole fleet found exactly one place that really mounts a
+filesystem: `openweft/weft-firstboot/datasource/disk_bsd.go` — and it is
+`openbsd || freebsd || netbsd`, never darwin. So DiskArbitration has **no
+consumer in this fleet today**. The binding is still right (observing disks,
+unmounting and ejecting are OS services no pure-Go library can provide), but it
+was written ahead of its caller, which this org's own doctrine says not to do:
+name a consumer before binding.
 
 **FSKit is deliberately NOT listed above.** Publishing a user-space filesystem
 would let the 18 pure-Go drivers in `go-filesystems` actually be mounted, which
