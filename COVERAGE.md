@@ -14,31 +14,43 @@ grep -rlE '/System/Library/Frameworks/[A-Za-z]+\.framework' --include='*.go' ~/�
 
 ## Where we stand
 
-`/System/Library/Frameworks` holds **305** frameworks on macOS 26. The org's 18
-packages reach **15** of them:
+Re-measured **2026-09-01** on macOS 26.6.2, with the commands above.
+`/System/Library/Frameworks` holds **305** frameworks. The org's **26** packages
+reach **22** of them, plus **2** private ones.
+
+Read the table for what it is: the frameworks each package opens **by path**,
+which is what the grep above finds. A package that goes through
+`go-macos/objc` reaches AppKit and Foundation through it without naming a path
+of its own — `appicon`, `fileprogress`, `keychain` and `notify` all do, and so
+appear empty here.
 
 | Package | Frameworks |
 |---|---|
-| accessibility | AppKit, ApplicationServices, CoreGraphics, Foundation |
-| appicon | AppKit, Foundation |
+| accessibility | ApplicationServices, CoreGraphics |
+| appkit | CoreGraphics |
 | audiotoolbox | AudioToolbox |
 | avfoundation | AVFoundation, CoreMedia, CoreVideo |
-| fileprogress | Foundation |
-| hotkey | Carbon, ApplicationServices, CoreGraphics |
-| iokit | IOKit, CoreFoundation |
-| keychain | CoreFoundation (Security) |
-| objc | AppKit, CoreFoundation, Foundation, Security, WebKit |
+| **coreml** | **CoreML**, CoreVideo |
+| diskarbitration | DiskArbitration |
+| hotkey | ApplicationServices, Carbon, CoreFoundation, CoreGraphics |
+| iokit | CoreFoundation, IOKit |
+| localauthentication | LocalAuthentication |
+| **metal** | **Metal** |
+| **multitouch** | CoreFoundation, *MultitouchSupport* (private) |
+| objc | AppKit, CoreFoundation, CoreGraphics, Foundation, Security, WebKit |
 | pointer | CoreGraphics |
-| screencapture | ScreenCaptureKit, CoreGraphics, CoreMedia, CoreVideo |
-| statusitem | AppKit, CoreGraphics, Foundation |
-| videotoolbox | VideoToolbox, CoreMedia, CoreVideo |
-| virtualdisplay | CoreGraphics, Foundation |
-| appbundle, brightness, launchagent, notify | none (file/shell level) |
+| screencapture | CoreGraphics, CoreMedia, CoreVideo, ScreenCaptureKit |
+| servicemanagement | ServiceManagement |
+| statusitem | CoreGraphics |
+| usernotifications | CoreServices, UserNotifications |
+| videotoolbox | CoreMedia, CoreVideo, VideoToolbox |
+| virtualdisplay | CoreGraphics |
+| brightness | *DisplayServices* (private) |
+| appbundle, appicon, fileprogress, keychain, launchagent, notify | none by path |
 
-Counting 290 unbound frameworks is not a backlog. Most are iOS-shaped, SwiftUI
+Counting 283 unbound frameworks is not a backlog. Most are iOS-shaped, SwiftUI
 shims (`_MapKit_SwiftUI`), or dead (QTKit, JavaVM, Tcl). The list below is
 ranked by **a named consumer that exists today**, not by breadth.
-
 ## Tier A — a consumer is already waiting
 
 | Framework | Consumer | Why the OS, and not pure Go |
@@ -88,7 +100,48 @@ the way in. Nothing of the sort exists in the fleet today.
 ### Landed since this census
 
 `go-macos/servicemanagement` v0.1.0, `go-macos/usernotifications`,
-`go-macos/localauthentication`, `go-macos/diskarbitration` v0.1.0.
+`go-macos/localauthentication`, `go-macos/diskarbitration` v0.1.0,
+`go-macos/multitouch` v0.1.0, and — 2026-09-01 — `go-macos/metal` v0.1.0 and
+`go-macos/coreml` v0.1.0.
+
+#### metal and coreml: the argument was CPU TIME, not speed
+
+Both were written for one consumer, `go-xrkit/player -3d`, which turns an
+ordinary flat film into 3D as it plays. Measured on an M4 Max:
+
+| | per frame | processor time per frame |
+|---|---|---|
+| 4K image pipeline, 16 cores | 65 ms | 82 ms |
+| the same on the GPU | 4 ms | **0.16 ms** |
+| depth network, CPU only | 46 ms | 114 ms |
+| depth network, GPU | **13 ms** | 5.1 ms |
+| depth network, Neural Engine | 23 ms | **0.4 ms** |
+
+The Neural Engine is NOT the fastest of the three — the GPU is, by nearly half.
+It is the one that leaves the machine alone, and on a laptop that is also
+drawing a browser and syncing files that is the number a person feels. So
+`coreml.Open` makes the caller choose rather than hiding a default.
+
+Four things these two found by being wrong first, worth knowing before the next
+binding:
+
+- **`MTLSize` is 24 bytes, and arm64 passes a composite that large
+  INDIRECTLY** — the caller leaves it in memory and hands over a pointer. Get
+  it wrong and the dispatch covers the wrong range in silence.
+- **An `.mlpackage` is not what Core ML runs.** `compileModelAtURL:` needs no
+  Xcode, but it writes into a temporary directory macOS empties whenever it
+  likes: MOVE the result or repay the seconds on every start.
+- **The Neural Engine answers in IEEE binary16**, which Go does not have, and
+  the naive expansion reads SUBNORMALS as zero — which is exactly where a depth
+  model keeps its far detail.
+- **CoreVideo pads rows.** 1088 bytes for 518 pixels, measured. Read as width
+  times pixel size, the image shears a little more on every row and still looks
+  entirely plausible.
+
+Both are checked against an independent implementation rather than against
+themselves: the GPU synthesis and the portable one in `go-images/depth` agree
+on **0 bytes out of 86 999 040** for a real photograph and a real network's
+depth map.
 
 `diskarbitration` is worth reading before writing another CoreFoundation
 binding: it reaches 100% coverage of the BINDINGS by making the bound C entry
@@ -121,13 +174,26 @@ A judge binding belongs behind a build tag so it can never enter a release build
 ## Tier C — opportunistic, no consumer yet
 
 OSLog (the unified log store; note `log show` returns nothing useful on this
-machine), CoreWLAN and SystemConfiguration (network state), Metal and MetalKit
-(GPU paths for go-gfx and xrkit), QuickLookThumbnailing, InputMethodKit.
+machine), CoreWLAN and SystemConfiguration (network state), MetalKit,
+QuickLookThumbnailing, InputMethodKit.
+
+**Metal has left this tier.** It was listed here as opportunistic, "GPU paths
+for go-gfx and xrkit" — a capability with no caller. What moved it was a
+MEASUREMENT rather than an intention: see below.
 
 ## Explicit non-goals
 
-SwiftUI and every `_X_SwiftUI` shim (no stable C ABI); CoreML, Vision, Speech
-(outside the fleet's subject); anything iOS-only.
+SwiftUI and every `_X_SwiftUI` shim (no stable C ABI); Vision, Speech; anything
+iOS-only.
+
+**Correction, 2026-09-01: Core ML was on this list and should not have been.**
+It was ruled "outside the fleet's subject", which was a judgement about subject
+matter made without a subject in front of it. A consumer then appeared —
+turning an ordinary flat film into 3D for the glasses needs a depth map, and a
+single-image depth network is the only thing that produces a good one — and the
+question stopped being philosophical. The lesson is the one this document
+already applies in the other direction: rank by a named consumer, and do not
+rule a framework OUT by breadth either.
 
 ## The go-widgets axis: what "native" should mean
 

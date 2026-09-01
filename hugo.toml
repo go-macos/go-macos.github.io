@@ -129,3 +129,52 @@ disableKinds = ["taxonomy", "term", "RSS", "sitemap", "404"]
   role = "login items"
   used_by = "go-macos/launchagent prefers it over the plist whenever the caller is bundled"
   result = "The supported way to start an application, agent or daemon at login since macOS 13. Two things it is shaped around, both measured rather than read: requiresApproval is a NORMAL outcome — register succeeds, the service is held, and it will not run until a person allows it in System Settings — so the status is a value carrying the sentence to show them, not an error and not a silence. And SMAppService needs a BUNDLE, which macOS hides: outside one the class is there, the factories hand back objects, and status answers notFound exactly as a genuinely missing service does; only register fails, blaming code signing (\"Codesigning failure loading plist … code: -67028\"). So every call asks NSBundle for an identifier first and reports ErrNotBundled, which is answerable."
+
+[[params.repos]]
+  name = "appkit"
+  reach = "AppKit's own controls, via go-macos/objc"
+  role = "native widgets"
+  used_by = "go-widgets/toolkit, for the controls a pixel blit cannot honestly imitate"
+  result = "Real NSButton, NSTextField, NSSecureTextField and NSSlider inside a host's own NSView. A secure field is the clearest case: what makes it secure is that the system, not the application, owns the keystrokes — so drawing dots into a canvas is not the same thing, however similar it looks."
+
+[[params.repos]]
+  name = "diskarbitration"
+  reach = "DiskArbitration"
+  role = "storage"
+  used_by = "no consumer wired yet — written ahead of its caller, which this org's doctrine says not to do"
+  result = "Which block devices exist, which volume is mounted where, and how to take one away politely. No hdiutil, no diskutil, no plist parsing. It reaches 100% coverage of the BINDINGS by making the bound C entry points the seams, so DASessionCreate can be made to answer NULL without a broken machine."
+
+[[params.repos]]
+  name = "localauthentication"
+  reach = "LocalAuthentication"
+  role = "identity"
+  used_by = "go-pdfkit's reader, to unlock a vault with Touch ID"
+  result = "Ask macOS to authenticate the person at the keyboard — Touch ID, or the login password. Biometry is the one thing that cannot be reimplemented: it is an attestation by the Secure Enclave, and a pure-Go substitute would be a lie."
+
+[[params.repos]]
+  name = "usernotifications"
+  reach = "UserNotifications, CoreServices"
+  role = "notifications"
+  used_by = "the news reader, and anything that must tell a person something while it is not in front of them"
+  result = "UNUserNotificationCenter — the framework the system actually uses, replacing the deprecated NSUserNotification. No osascript. A notification needs a real application bundle to come from, which is why go-macos/appbundle sits beside it."
+
+[[params.repos]]
+  name = "multitouch"
+  reach = "PRIVATE MultitouchSupport, via ebitengine/purego"
+  role = "input"
+  used_by = "go-xrkit/desk switches screen on a three-finger swipe"
+  result = "The raw contacts on a Mac's trackpad, with NO permission at all. The gestures macOS publishes are the ones macOS has already decided about: a three-finger swipe means switch space only if that is switched on, it arrives as a private event the Dock consumes first, and an application that wants it for something else has to ask a person to change a system setting so that a program can work — which is backwards. The contacts underneath are not spoken for."
+
+[[params.repos]]
+  name = "metal"
+  reach = "Metal"
+  role = "GPU compute"
+  used_by = "go-xrkit/player synthesises both eyes of a converted film"
+  result = "Compute kernels on the GPU, compiled from Metal Shading Language at RUN TIME by the system compiler — no build step, no toolchain, nothing shipped but a source string. On a chip with unified memory a buffer's bytes are the bytes the GPU reads, so nothing is uploaded or downloaded. Measured on an M4 Max, a 4K frame of image work: 65 ms and 82 ms of processor time on sixteen cores, against 4 ms and 0.16 ms here."
+
+[[params.repos]]
+  name = "coreml"
+  reach = "CoreML, CoreVideo"
+  role = "neural engine"
+  used_by = "go-xrkit/player estimates depth, to turn a flat film into 3D"
+  result = "A trained model on the Neural Engine, with no cgo and no Xcode — an .mlpackage is compiled by the system compiler at run time. It is NOT the fastest of the three processors; the GPU is, by nearly half. It is the one that leaves the machine alone: 0.4 ms of processor time a frame against 114 ms on the CPU. So Open makes the caller choose rather than hiding a default."
