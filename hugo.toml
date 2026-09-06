@@ -178,3 +178,27 @@ disableKinds = ["taxonomy", "term", "RSS", "sitemap", "404"]
   role = "neural engine"
   used_by = "go-xrkit/player estimates depth, to turn a flat film into 3D"
   result = "A trained model on the Neural Engine, with no cgo and no Xcode — an .mlpackage is compiled by the system compiler at run time. It is NOT the fastest of the three processors; the GPU is, by nearly half. It is the one that leaves the machine alone: 0.4 ms of processor time a frame against 114 ms on the CPU. So Open makes the caller choose rather than hiding a default."
+[[params.repos]]
+  name = "coreaudio"
+  reach = "CoreAudio's device list through the objc bridge"
+  role = "audio"
+  used_by = "anything that has to name a machine's inputs and outputs"
+  result = "Names the machine's audio devices — what exists, which is the default, what each is called. Pure path through CoreAudio's property API with no cgo, so a program can enumerate hardware without linking a C toolchain into its build."
+[[params.repos]]
+  name = "dsstore"
+  reach = "the Finder's own file, written byte for byte — no AppKit, no Finder"
+  role = "disk images"
+  used_by = "a .dmg that opens showing a background with its icons placed on it"
+  result = "Writes the .DS_Store a directory carries: the window's background picture and where each icon sits. None of that lives in the volume, the image format or the filesystem — it is one file in the volume's root, and nothing in Go could write one. Two placements in it are load-bearing and undocumented, and the package says so at the lines that matter."
+[[params.repos]]
+  name = "factors"
+  reach = "LocalAuthentication and the security key, behind one interface"
+  role = "authentication"
+  used_by = "go-authn/mfa, which decides whether enough factors answered"
+  result = "Turns what this machine can prove about a person — Touch ID, a security key — into factors the portable rule in go-authn/mfa can weigh. The platform half of a stack whose other half knows nothing about macOS."
+[[params.repos]]
+  name = "fido"
+  reach = "the CTAP protocol over USB HID, spoken directly"
+  role = "authentication"
+  used_by = "go-authn/fido, the same protocol on every other system"
+  result = "Reaches a FIDO security key over USB HID and speaks the client-to-authenticator protocol to it, in pure Go. The transport half on macOS of a stack whose protocol half is platform-independent."
