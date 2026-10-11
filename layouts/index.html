@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+{{/* Dark Reader repaints pages that already draw their own dark theme, as this one does: ask it to stand aside. */}}
+<meta name="darkreader-lock">
 <title>{{ .Site.Title }} — pure-Go macOS system APIs, no cgo</title>
 <meta name="description" content="Pure-Go (CGO_ENABLED=0) access to macOS system APIs through ebitengine/purego: the Objective-C runtime bridge (objc), the Keychain generic-password store (keychain) and the notification mechanisms (notify). dlopen + objc_msgSend, no cgo, and never shelling out to osascript or /usr/bin/security.">
 <style>
