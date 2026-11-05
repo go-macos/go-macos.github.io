@@ -25,7 +25,7 @@ disableKinds = ["taxonomy", "term", "RSS", "sitemap", "404"]
   reach = "dlopen + objc_msgSend, via ebitengine/purego"
   role = "foundation"
   used_by = "every other macOS package here rests on it"
-  result = "The shared home for the Objective-C plumbing the fleet's CGO=0 macOS code kept re-implementing: cached selector/class lookup, NSString↔Go bridging, framework dlopen (Foundation, AppKit, WebKit, CoreFoundation, Security, libSystem), autorelease pools, run loops, runtime class registration, and a main-thread hop through libdispatch."
+  result = "The shared home for the Objective-C plumbing the fleet's CGO=0 macOS code kept re-implementing: cached selector/class lookup, NSString↔Go bridging, framework dlopen (Foundation, AppKit, WebKit, CoreFoundation, Security, libSystem), autorelease pools, run loops, runtime class registration, and a main-thread hop through libdispatch. For messages sent every frame, Msg0–Msg3 skip purego's reflective call: one allocation per message instead of five to seven."
 [[params.repos]]
   name = "keychain"
   reach = "dlsym'd CoreFoundation + Security, via ebitengine/purego"
@@ -174,8 +174,8 @@ disableKinds = ["taxonomy", "term", "RSS", "sitemap", "404"]
   name = "metal"
   reach = "Metal"
   role = "GPU compute"
-  used_by = "go-xrkit/player synthesises both eyes of a converted film"
-  result = "Compute kernels on the GPU, compiled from Metal Shading Language at RUN TIME by the system compiler — no build step, no toolchain, nothing shipped but a source string. On a chip with unified memory a buffer's bytes are the bytes the GPU reads, so nothing is uploaded or downloaded. Measured on an M4 Max, a 4K frame of image work: 65 ms and 82 ms of processor time on sixteen cores, against 4 ms and 0.16 ms here."
+  used_by = "go-xrkit/player synthesises both eyes of a converted film; go-gfx/gpu2d draws go-widgets frames"
+  result = "Compute kernels on the GPU, compiled from Metal Shading Language at RUN TIME by the system compiler — no build step, no toolchain, nothing shipped but a source string. On a chip with unified memory a buffer's bytes are the bytes the GPU reads, so nothing is uploaded or downloaded. Measured on an M4 Max, a 4K frame of image work: 65 ms and 82 ms of processor time on sixteen cores, against 4 ms and 0.16 ms here. Submit returns at once, so the CPU records the next frame while the GPU draws this one, and a frame costs 22 allocations."
 
 [[params.repos]]
   name = "coreml"
