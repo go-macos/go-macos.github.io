@@ -10,6 +10,21 @@ disableKinds = ["taxonomy", "term", "RSS", "sitemap", "404"]
 [markup.goldmark.renderer]
   unsafe = true
 
+# The architectures the tests RUN on (objc ci.yml: macos-latest is arm64,
+# ubuntu-latest and windows-latest are amd64; nothing else is run).
+[params.mantra]
+  goarch = ["amd64", "arm64"]
+
+# The hero's buttons, rendered by landingkit's cta.html in the kit's order.
+[[params.cta]]
+  kind  = "docs"
+  href  = "https://pkg.go.dev/github.com/go-macos/objc"
+  label = "Go reference"
+[[params.cta]]
+  kind  = "github"
+  href  = "https://github.com/go-macos"
+  label = "GitHub"
+
 # One card per repository, and EVERY repository in the org has one. "reach" is
 # the mechanism it actually uses to talk to the OS.
 #

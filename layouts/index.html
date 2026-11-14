@@ -41,13 +41,11 @@
   <div class="hero"><div class="wrap">
     <div>
       <h1 class="head">go-macos</h1>
-      <p class="sub">macOS system APIs from <strong>pure Go</strong> —
-      the Objective-C runtime, the Keychain and the notification bus, reached with
-      <strong><code>CGO_ENABLED=0</code></strong> and no subprocesses.</p>
-      <div class="cta">
-        <a class="btn btn-primary" href="https://github.com/go-macos">{{ partial "icons/github.html" . }}GitHub</a>
-        <a class="btn btn-ghost" href="https://pkg.go.dev/github.com/go-macos/objc">{{ partial "icons/book.html" . }}Go reference</a>
-      </div>
+      <p class="sub">macOS system APIs —
+      the Objective-C runtime, the Keychain and the notification bus, reached
+      with <strong>no subprocesses</strong>.</p>
+      {{/* [[params.cta]] in hugo.toml: the kit renders the row */}}
+      {{ partial "cta.html" . }}
       <div class="trust">{{ if not (partial "mantra-on.html" $) }}<span class="pill">CGO_ENABLED=0</span>{{ end }}<span class="pill">ebitengine/purego</span><span class="pill">no osascript</span><span class="pill">no /usr/bin/security</span>{{ if not (partial "mantra-on.html" $) }}<span class="pill">BSD-3-Clause</span>{{ end }}</div>
     </div>
     {{ partial "hero-carousel.html" . }}

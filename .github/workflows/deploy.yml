@@ -48,6 +48,13 @@ jobs:
       - name: Build landing page
         run: hugo --minify --baseURL "${{ steps.pages.outputs.base_url }}/"
 
+      # The landing kit's own rules, read from the BUILT site (a hand-written
+      # cta row, a playground link that is not btn-try, a fact said twice).
+      - name: Check the landing against the kit
+        env:
+          GOWORK: "off"
+        run: go run github.com/go-fleettools/landingkit/cmd/landingkit check public
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5
         with:
