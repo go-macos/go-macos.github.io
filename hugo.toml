@@ -93,8 +93,8 @@ disableKinds = ["taxonomy", "term", "RSS", "sitemap", "404"]
   name = "accessibility"
   reach = "Accessibility (AX) API, via ebitengine/purego"
   role = "windows"
-  used_by = "go-xrkit/desk puts applications on the ribbon's screens with it"
-  result = "Move another application's window to a chosen display. It needs the Accessibility grant and says so plainly rather than failing silently, and it never trusts a write: every move is read back, and a window that did not go where it was told is a refusal with both frames in the message. Two rules in it came from measurement, not documentation — a window is SHRUNK BEFORE being moved, because the window server clamps a move by the size the window has at the moment of the write, and a window too big for its destination is walked one display closer per write rather than refused, so it keeps writing while each write brings the window nearer."
+  used_by = "go-xrkit/desk puts applications on the ribbon's screens with it; go-fde/zed's zedgui drives ZEDFREE.app with it to test archives"
+  result = "Read and operate another application's UI, then move its windows: dump the accessibility tree with secure fields redacted, find a control, set a value, press a button, post key and click events. Move another application's window to a chosen display. It needs the Accessibility grant and says so plainly rather than failing silently, and it never trusts a write: every move is read back, and a window that did not go where it was told is a refusal with both frames in the message. Two rules in it came from measurement, not documentation — a window is SHRUNK BEFORE being moved, because the window server clamps a move by the size the window has at the moment of the write, and a window too big for its destination is walked one display closer per write rather than refused, so it keeps writing while each write brings the window nearer."
 [[params.repos]]
   name = "hotkey"
   reach = "Carbon RegisterEventHotKey, via ebitengine/purego"
