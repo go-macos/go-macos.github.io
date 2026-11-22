@@ -96,6 +96,12 @@ disableKinds = ["taxonomy", "term", "RSS", "sitemap", "404"]
   used_by = "go-xrkit/desk puts applications on the ribbon's screens with it; go-fde/zed's zedgui drives ZEDFREE.app with it to test archives"
   result = "Read and operate another application's UI, then move its windows: dump the accessibility tree with secure fields redacted, find a control, set a value, press a button, post key and click events. Move another application's window to a chosen display. It needs the Accessibility grant and says so plainly rather than failing silently, and it never trusts a write: every move is read back, and a window that did not go where it was told is a refusal with both frames in the message. Two rules in it came from measurement, not documentation — a window is SHRUNK BEFORE being moved, because the window server clamps a move by the size the window has at the moment of the write, and a window too big for its destination is walked one display closer per write rather than refused, so it keeps writing while each write brings the window nearer."
 [[params.repos]]
+  name = "netfs"
+  reach = "NetFS framework (NetFSMountURLSync), via go-macos/objc and ebitengine/purego"
+  role = "network volumes"
+  used_by = "any program that must mount a share without putting a password in an argument vector"
+  result = "Mount an SMB or WebDAV URL and unmount it again. The user name and password go to NetFS as CFStrings: never in an argument vector, where mount_smbfs shows them to ps, never in the environment, never in the URL, and NetFS is told to show no dialog. If the context ends before NetFS returns, a mount that completes afterwards is unmounted again, so cancellation never leaves a volume behind. Measured: a wrong password for a server whose volume was just unmounted can still succeed for a few seconds, from NetFS's cached session, so Mount is not a password check."
+[[params.repos]]
   name = "sessionwatch"
   reach = "NSDistributedNotificationCenter, NSWorkspace notifications and CoreGraphics, via go-macos/objc"
   role = "session"
